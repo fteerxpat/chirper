@@ -1,31 +1,48 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration; // นำเข้า Migration สำหรับสร้างหรือแก้ไขโครงสร้างตารางฐานข้อมูล
-use Illuminate\Database\Schema\Blueprint; // นำเข้า Blueprint สำหรับกำหนดโครงสร้างตาราง
-use Illuminate\Support\Facades\Schema; // นำเข้า Schema สำหรับจัดการตารางในฐานข้อมูล
+use Illuminate\Database\Migrations\Migration;
+// นำเข้า Migration สำหรับการสร้างและจัดการโครงสร้างฐานข้อมูล
 
-return new class extends Migration // สร้างคลาสที่ขยายจาก Migration
+use Illuminate\Database\Schema\Blueprint;
+// นำเข้า Blueprint สำหรับการกำหนดตารางในฐานข้อมูล
+
+use Illuminate\Support\Facades\Schema;
+// นำเข้า Schema เพื่อใช้ฟังก์ชันต่างๆ สำหรับจัดการฐานข้อมูล
+
+return new class extends Migration
+// การใช้คลาสอนุกรมที่ไม่ต้องตั้งชื่อ ซึ่งขยายจาก Migration เพื่อสร้างการอพยพฐานข้อมูล
 {
     /**
-     * ทำการสร้างโครงสร้างตารางเมื่อรันคำสั่ง `migrate`
+     * Run the migrations.
      */
-    public function up(): void // เมธอดนี้ทำงานเมื่อรัน `php artisan migrate`
+    public function up(): void
     {
-        Schema::create('chirps', function (Blueprint $table) { // สร้างตารางชื่อ 'chirps'
-            $table->id(); // สร้างคอลัมน์ id เป็น primary key แบบ auto increment
-            $table->foreignId('user_id') // สร้างคอลัมน์ foreign key ชื่อ user_id
-                ->constrained() // เชื่อมโยงกับตาราง users โดยอัตโนมัติ
-                ->cascadeOnDelete(); // ลบข้อมูลใน chirps เมื่อผู้ใช้ที่เกี่ยวข้องถูกลบ
-            $table->string('message'); // สร้างคอลัมน์ข้อความชื่อ message ที่มีชนิดข้อมูลเป็น string
-            $table->timestamps(); // สร้างคอลัมน์ created_at และ updated_at อัตโนมัติ
+        // ฟังก์ชัน up ใช้ในการสร้างตารางหรือการเปลี่ยนแปลงฐานข้อมูล
+        Schema::create('chirps', function (Blueprint $table) {
+            // สร้างตาราง 'chirps' ด้วย Blueprint เพื่อกำหนดโครงสร้าง
+            $table->id();
+            // สร้างฟิลด์ id เป็น primary key (auto-increment)
+
+            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            // สร้างฟิลด์ 'user_id' เป็น foreign key ที่เชื่อมโยงกับตาราง 'users'
+            // - `constrained()`: เชื่อมโยงกับตาราง 'users' โดยอัตโนมัติ
+            // - `cascadeOnDelete()`: หากผู้ใช้ถูกลบออก ข้อมูลใน 'chirps' ที่เกี่ยวข้องจะถูกลบตาม (cascade delete)
+
+            $table->string('message');
+            // สร้างฟิลด์ 'message' เป็นสตริงเพื่อเก็บข้อความของ Chirp
+
+            $table->timestamps();
+            // สร้างฟิลด์ 'created_at' และ 'updated_at' สำหรับบันทึกเวลาเมื่อมีการสร้างและแก้ไขข้อมูล
         });
     }
 
     /**
-     * ย้อนกลับการเปลี่ยนแปลงเมื่อรันคำสั่ง `migrate:rollback`
+     * Reverse the migrations.
      */
-    public function down(): void // เมธอดนี้ทำงานเมื่อรัน `php artisan migrate:rollback`
+    public function down(): void
     {
-        Schema::dropIfExists('chirps'); // ลบตาราง chirps ออกจากฐานข้อมูล
+        // ฟังก์ชัน down ใช้ในการย้อนการเปลี่ยนแปลงฐานข้อมูล (ในกรณีที่ต้องการ rollback)
+        Schema::dropIfExists('chirps');
+        // ลบตาราง 'chirps' หากมันมีอยู่
     }
 };

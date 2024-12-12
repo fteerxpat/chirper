@@ -1,28 +1,35 @@
 <?php
 
-namespace App\Http\Controllers; // กำหนด namespace ของไฟล์ให้อยู่ใน App\Http\Controllers
+namespace App\Http\Controllers;
+// กำหนด namespace ของคลาสให้อยู่ใน App\Http\Controllers เพื่อจัดระเบียบโครงสร้างและช่วยให้สามารถเรียกใช้คลาสได้อย่างถูกต้อง
+use Illuminate\Support\Facades\Gate;
+// เรียกใช้ Gate สำหรับกำหนดนโยบายสิทธิ์การเข้าถึง (authorization policies) ในแอปพลิเคชัน
+use App\Models\Chirp;
+// นำเข้าโมเดล Chirp เพื่อใช้งาน เช่น ดึงข้อมูล, เพิ่ม, ลบ หรือแก้ไขข้อมูลในฐานข้อมูลที่เกี่ยวข้องกับ Chirps
+use Illuminate\Http\RedirectResponse;
+// ใช้สำหรับกำหนดผลลัพธ์ของคำขอ (request) ที่ต้องการเปลี่ยนเส้นทาง (redirect) เช่น การบันทึกข้อมูลแล้วเปลี่ยนเส้นทางไปหน้าอื่น
+use Illuminate\Http\Request;
+// ใช้สำหรับจัดการคำขอ HTTP เช่น ดึงข้อมูลที่ผู้ใช้ส่งมาผ่านฟอร์มหรือ URL
+use Inertia\Inertia;
+// ใช้ Inertia.js ในการเรนเดอร์หน้าเว็บในรูปแบบ Single Page Application (SPA) โดยทำงานร่วมกับ Laravel และ Vue/React
+use Inertia\Response;
+// ใช้สำหรับส่งข้อมูลกลับไปยัง frontend ผ่าน Inertia.js โดยกำหนดรูปแบบผลลัพธ์ที่ใช้ Inertia
 
-use Illuminate\Support\Facades\Gate; // ใช้สำหรับจัดการการอนุญาต (authorization) ผ่าน Gate
-use App\Models\Chirp; // นำเข้ารุ่น (Model) Chirp สำหรับใช้งานในคอนโทรลเลอร์นี้
-use Illuminate\Http\RedirectResponse; // ใช้สำหรับการตอบกลับแบบเปลี่ยนเส้นทาง (redirect)
-use Illuminate\Http\Request; // ใช้สำหรับจัดการคำขอ HTTP
-use Inertia\Inertia; // ใช้ Inertia.js ในการเรนเดอร์หน้า
-use Inertia\Response; // ใช้สำหรับส่งตอบกลับ Inertia Response
-
-class ChirpController extends Controller // คลาสคอนโทรลเลอร์สำหรับจัดการ "chirps"
+class ChirpController extends Controller
+// คลาส ChirpController ขยายจาก Controller สำหรับจัดการกับ resource "Chirps" ในแอปพลิเคชัน
 {
     /**
-     * แสดงรายการของ resource ทั้งหมด
+     * Display a listing of the resource.
      */
     public function index(): Response
     {
-        return Inertia::render('Chirps/Index', [ // เรนเดอร์หน้า "Chirps/Index"
-            'chirps' => Chirp::with('user:id,name')->latest()->get(), // ดึงข้อมูล chirps พร้อมข้อมูลผู้ใช้ (user) และเรียงลำดับล่าสุดก่อน
+        return Inertia::render('Chirps/Index', [
+            'chirps' => Chirp::with('user:id,name')->latest()->get(),
         ]);
     }
 
     /**
-     * แสดงฟอร์มสำหรับสร้าง resource ใหม่ (ยังไม่ใช้งานในตัวอย่างนี้)
+     * Show the form for creating a new resource.
      */
     public function create()
     {
@@ -30,21 +37,21 @@ class ChirpController extends Controller // คลาสคอนโทรลเ
     }
 
     /**
-     * บันทึก resource ใหม่ในระบบ
+     * Store a newly created resource in storage.
      */
     public function store(Request $request): RedirectResponse
     {
-        $validated = $request->validate([ // ตรวจสอบความถูกต้องของข้อมูลจากคำขอ
-            'message' => 'required|string|max:255', // message ต้องมีค่า, เป็น string และยาวไม่เกิน 255 ตัวอักษร
+        $validated = $request->validate([
+            'message' => 'required|string|max:255',
         ]);
 
-        $request->user()->chirps()->create($validated); // สร้าง chirp ใหม่และเชื่อมโยงกับผู้ใช้ปัจจุบัน
+        $request->user()->chirps()->create($validated);
 
-        return redirect(route('chirps.index')); // เปลี่ยนเส้นทางกลับไปยังหน้ารายการ chirps
+        return redirect(route('chirps.index'));
     }
 
     /**
-     * แสดง resource ที่ระบุ (ยังไม่ใช้งานในตัวอย่างนี้)
+     * Display the specified resource.
      */
     public function show(Chirp $chirp)
     {
@@ -52,7 +59,7 @@ class ChirpController extends Controller // คลาสคอนโทรลเ
     }
 
     /**
-     * แสดงฟอร์มสำหรับแก้ไข resource ที่ระบุ (ยังไม่ใช้งานในตัวอย่างนี้)
+     * Show the form for editing the specified resource.
      */
     public function edit(Chirp $chirp)
     {
@@ -60,30 +67,30 @@ class ChirpController extends Controller // คลาสคอนโทรลเ
     }
 
     /**
-     * อัปเดต resource ที่ระบุในระบบ
+     * Update the specified resource in storage.
      */
     public function update(Request $request, Chirp $chirp): RedirectResponse
     {
-        Gate::authorize('update', $chirp); // ตรวจสอบสิทธิ์ผู้ใช้ว่ามีสิทธิ์แก้ไข chirp นี้หรือไม่
+        Gate::authorize('update', $chirp);
 
-        $validated = $request->validate([ // ตรวจสอบความถูกต้องของข้อมูลจากคำขอ
-            'message' => 'required|string|max:255', // message ต้องมีค่า, เป็น string และยาวไม่เกิน 255 ตัวอักษร
+        $validated = $request->validate([
+            'message' => 'required|string|max:255',
         ]);
 
-        $chirp->update($validated); // อัปเดตข้อมูล chirp
+        $chirp->update($validated);
 
-        return redirect(route('chirps.index')); // เปลี่ยนเส้นทางกลับไปยังหน้ารายการ chirps
+        return redirect(route('chirps.index'));
     }
 
     /**
-     * ลบ resource ที่ระบุออกจากระบบ
+     * Remove the specified resource from storage.
      */
     public function destroy(Chirp $chirp): RedirectResponse
     {
-        Gate::authorize('delete', $chirp); // ตรวจสอบสิทธิ์ผู้ใช้ว่ามีสิทธิ์ลบ chirp นี้หรือไม่
+        Gate::authorize('delete', $chirp);
 
-        $chirp->delete(); // ลบ chirp ออกจากฐานข้อมูล
+        $chirp->delete();
 
-        return redirect(route('chirps.index')); // เปลี่ยนเส้นทางกลับไปยังหน้ารายการ chirps
+        return redirect(route('chirps.index'));
     }
 }
